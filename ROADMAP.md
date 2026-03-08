@@ -310,7 +310,7 @@ public class Building {
 - [x] `CultureLoader.java` — lit tous les `data/*/culture/*.json` via `Culture.CODEC`
 - [x] Support multi-datapacks (plusieurs cultures en parallèle)
 - [x] Validation automatique par Codec + messages d'erreur clairs dans les logs
-- [x] API publique : `MilenaireApi.registerCulture(...)` pour les mods compagnons
+- [x] API publique : `MillenaireApi.registerCulture(...)` pour les mods compagnons
 
 ### 2.3 — Culture Normande intégrée
 - [x] `normans.json` — définition principale complète

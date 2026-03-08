@@ -51,15 +51,11 @@ public class MillCommands {
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_village_info"), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_village_tp"), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_village_remove"), false);
-        ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_tool_scanner"), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_tool_placer"), false);
-        ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_structure_save"), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_structure_list"), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_structure_place"), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_structure_delete"), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_structure_info"), false);
-        ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_selection_clear"), false);
-        ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_selection_info"), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("chat.millenaire-new-age.command.help.mna_creator_generation"), false);
         return 1;
     }

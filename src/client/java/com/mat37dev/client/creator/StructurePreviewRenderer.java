@@ -85,10 +85,10 @@ public class StructurePreviewRenderer {
         String structureId = CreatorClientState.getPreviewStructureId();
         StructureTemplate template = tryLoadTemplate(mc, structureId);
 
-        // Embed : si la couche basse est du sol naturel, descendre d'un bloc
-        // (cohérent avec StructurePlacerItem qui fait origin.below())
-        if (template != null && StructureSaveManager.shouldEmbedFromTemplate(template)) {
-            originPos = originPos.below();
+        // Même logique que StructurePlacerItem : -1 (surface) + -floorOffset (fondations)
+        if (structureId != null) {
+            int floorOffset = StructureSaveManager.loadMetadata(structureId);
+            originPos = originPos.below(1 + floorOffset);
         }
 
         if (template != null) {

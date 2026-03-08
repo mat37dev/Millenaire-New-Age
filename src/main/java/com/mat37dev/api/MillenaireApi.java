@@ -12,15 +12,15 @@ import com.mat37dev.data.CultureLoader;
  * <p>Usage dans le mod compagnon :</p>
  * <pre>{@code
  * // Dans ModInitializer.onInitialize() :
- * MilenaireApi.registerCulture(new Culture("vikings", ...));
+ * MillenaireApi.registerCulture(new Culture("vikings", ...));
  * }</pre>
  *
  * <p>Note : pour une culture sans code Java custom (blocs/items génériques),
  * préférez un datapack embarqué dans votre JAR — c'est plus simple.</p>
  */
-public final class MilenaireApi {
+public final class MillenaireApi {
 
-    private MilenaireApi() {}
+    private MillenaireApi() {}
 
     /**
      * Enregistre une culture programmatiquement.

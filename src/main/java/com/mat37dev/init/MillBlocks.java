@@ -4,6 +4,7 @@ import com.mat37dev.MillenaireNewAge;
 import com.mat37dev.block.MillChestBlock;
 import com.mat37dev.block.MillMarkerBlock;
 import com.mat37dev.block.PreserveGroundBlock;
+import com.mat37dev.creator.ImportTableBlock;
 import com.mat37dev.init.custom_classes.MillPathBlock;
 import com.mat37dev.init.custom_classes.MillPathSlab;
 import com.mat37dev.block.MillBedBlock;
@@ -189,7 +190,7 @@ public class MillBlocks {
     public static final Block SOIL_POTATO = register("soil_potato",
             BlockBehaviour.Properties.of().mapColor(MapColor.DIRT).strength(-1.0f, 3600000.0f).sound(SoundType.GRAVEL).noOcclusion());
 
-    public static final Block IMPORT_TABLE = register("import_table",
+    public static final ImportTableBlock IMPORT_TABLE = register("import_table", ImportTableBlock::new,
             BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WOOD)
                     .strength(2.5f)

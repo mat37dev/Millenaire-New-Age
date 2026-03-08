@@ -2,7 +2,6 @@ package com.mat37dev.init;
 
 import com.mat37dev.MillenaireNewAge;
 import com.mat37dev.creator.StructurePlacerItem;
-import com.mat37dev.creator.StructureScannerItem;
 import com.mat37dev.creator.WandOfSummoningItem;
 import com.mat37dev.init.custom_classes.MillCustomMaterials;
 import com.mat37dev.init.custom_classes.MillFoodItemBuilder;
@@ -58,7 +57,6 @@ public class MillItems {
     // CREATOR TOOLS — Baguettes créateur
     // =========================================================================
 
-    public static final Item STRUCTURE_SCANNER = registerItem("structure_scanner", StructureScannerItem::new);
     public static final Item STRUCTURE_PLACER  = registerItem("structure_placer",  StructurePlacerItem::new);
     public static final Item PRESERVE_GROUND   = registerBlockItem("preserve_ground", MillBlocks.PRESERVE_GROUND);
     public static final Item SLEEPING_POS      = registerBlockItem("sleeping_pos",    MillBlocks.SLEEPING_POS);

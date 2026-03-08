@@ -30,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
  * </ul>
  *
  * <p>La structure sélectionnée et la rotation sont stockées dans {@link CustomData}
- * de l'ItemStack. L'ID est aussi mis en cache dans {@link CreatorSession} du joueur.</p>
+ * de l'ItemStack.</p>
  */
 public class StructurePlacerItem extends Item {
 
@@ -108,7 +108,7 @@ public class StructurePlacerItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        // Charger le template une seule fois (validation + embed)
+        // Valider que la structure existe
         net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template =
             StructureSaveManager.loadTemplate(player.level().getServer(), structureId);
         if (template == null) {
@@ -120,9 +120,11 @@ public class StructurePlacerItem extends Item {
         int rot = getRotation(stack);
         Rotation mcRotation = toMcRotation(rot);
 
-        // Si la couche basse du template est du sol naturel, enfoncer d'un bloc
-        boolean embed = StructureSaveManager.shouldEmbedFromTemplate(template);
-        BlockPos actualOrigin = embed ? origin.below() : origin;
+        // origin est 1 bloc AU-DESSUS du bloc de surface cliqué.
+        // On descend de 1 pour aligner le sol de la structure avec la surface,
+        // puis de floorOffset supplémentaires si la structure a des fondations sous le sol.
+        int floorOffset = StructureSaveManager.loadMetadata(structureId);
+        BlockPos actualOrigin = origin.below(1 + floorOffset);
 
         net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings =
             new net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings()

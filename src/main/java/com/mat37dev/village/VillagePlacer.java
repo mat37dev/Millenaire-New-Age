@@ -6,6 +6,7 @@ import com.mat37dev.culture.Culture;
 import com.mat37dev.culture.CultureRegistry;
 import com.mat37dev.culture.VillageType;
 import com.mat37dev.config.VillageConfig;
+import com.mat37dev.creator.ImportTableConfig;
 import com.mat37dev.creator.StructureSaveManager;
 import com.mat37dev.entity.ai.BuildingHelper;
 import net.minecraft.ChatFormatting;
@@ -179,12 +180,10 @@ public class VillagePlacer {
             // Terraformer en préservant les empreintes voisines déjà posées
             int targetY = TerrainAdapter.adapt(level, xzPos, size.getX(), size.getZ(), TERRAIN_PADDING, placed);
 
-            // On ajuste le Y selon si la structure doit être "fondue" dans le sol
-            if (StructureSaveManager.shouldEmbedInGround(server, bt.structureId())) {
-                targetY--;
-            }
-
-            BlockPos origin = new BlockPos(xzPos.getX(), targetY, xzPos.getZ());
+            // targetY = premier bloc d'air (TerrainAdapter). On descend de 1 pour aligner
+            // le sol de la structure avec le bloc de surface, + floorOffset pour les fondations.
+            int floorOffset = StructureSaveManager.loadMetadata(bt.structureId());
+            BlockPos origin = new BlockPos(xzPos.getX(), targetY - 1 - floorOffset, xzPos.getZ());
 
             // Placer la structure
             boolean ok = StructureSaveManager.placeStructure(server, level, bt.structureId(),
@@ -418,12 +417,22 @@ public class VillagePlacer {
         level.addFreshEntity(stand);
     }
 
-    // ── Taille du template ────────────────────────────────────────────────────
+    // ── Empreinte XZ du template ─────────────────────────────────────────────
 
+    /**
+     * Retourne l'empreinte XZ (largeur × longueur) de la structure.
+     * Utilise les valeurs {@code width}/{@code length} de {@code millenaire_meta} en priorité
+     * (plus précis car excluant la profondeur verticale du NBT), sinon fallback sur la taille totale du template.
+     */
     private static Vec3i getTemplateSize(MinecraftServer server, String structureId) {
+        ImportTableConfig meta = StructureSaveManager.loadImportTableConfig(structureId);
+        if (meta != null) {
+            return new Vec3i(meta.width(), 1, meta.length());
+        }
         StructureTemplate template = StructureSaveManager.loadTemplate(server, structureId);
         if (template == null) return null;
-        return template.getSize();
+        Vec3i s = template.getSize();
+        return new Vec3i(s.getX(), 1, s.getZ());
     }
 
     // ── Nommage ───────────────────────────────────────────────────────────────

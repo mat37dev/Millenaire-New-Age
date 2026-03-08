@@ -79,8 +79,7 @@ public class MillChestBlock extends ChestBlock {
     }
 
     @Override
-    @Nullable
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    public @NotNull BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MillChestBlockEntity(pos, state);
     }
 

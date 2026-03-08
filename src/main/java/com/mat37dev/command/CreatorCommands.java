@@ -2,7 +2,6 @@ package com.mat37dev.command;
 
 import com.mat37dev.block.MillChestBlockEntity;
 import com.mat37dev.config.VillageConfig;
-import com.mat37dev.creator.CreatorSession;
 import com.mat37dev.creator.StructurePlacerItem;
 import com.mat37dev.creator.StructureSaveManager;
 import com.mat37dev.init.MillItems;
@@ -29,17 +28,12 @@ import java.util.List;
  * Commandes {@code /mna creator}.
  *
  * <pre>
- * /mna creator tool scanner          → donne la Baguette d'Arpentage
  * /mna creator tool placer           → donne la Baguette de Placement (vide)
  *
- * /mna creator structure save <id>   → sauvegarde la sélection actuelle
  * /mna creator structure list        → ouvre le GUI de liste
  * /mna creator structure place <id>  → configure la baguette + envoie le preview
- * /mna creator structure delete <id> → supprime le .nbt et le _blocks.json
+ * /mna creator structure delete <id> → supprime le .nbt
  * /mna creator structure info <id>   → infos sur une structure
- *
- * /mna creator selection clear       → réinitialise la sélection
- * /mna creator selection info        → affiche pos1/pos2/taille
  *
  * /mna creator chest unlock          → déverrouille le coffre visé
  * /mna creator chest lock            → verrouille le coffre visé
@@ -54,18 +48,12 @@ public class CreatorCommands {
 
                     // ── /mna creator tool ──────────────────────────────────
                     .then(Commands.literal("tool")
-                        .then(Commands.literal("scanner")
-                            .executes(CreatorCommands::giveScannerWand))
                         .then(Commands.literal("placer")
                             .executes(CreatorCommands::givePlacerWand))
                     )
 
                     // ── /mna creator structure ─────────────────────────────
                     .then(Commands.literal("structure")
-                        .then(Commands.literal("save")
-                            .then(Commands.argument("id", StringArgumentType.greedyString())
-                                .executes(ctx -> saveStructure(ctx,
-                                    StringArgumentType.getString(ctx, "id")))))
                         .then(Commands.literal("list")
                             .executes(CreatorCommands::listStructures))
                         .then(Commands.literal("place")
@@ -80,14 +68,6 @@ public class CreatorCommands {
                             .then(Commands.argument("id", StringArgumentType.greedyString())
                                 .executes(ctx -> structureInfo(ctx,
                                     StringArgumentType.getString(ctx, "id")))))
-                    )
-
-                    // ── /mna creator selection ─────────────────────────────
-                    .then(Commands.literal("selection")
-                        .then(Commands.literal("clear")
-                            .executes(CreatorCommands::clearSelection))
-                        .then(Commands.literal("info")
-                            .executes(CreatorCommands::selectionInfo))
                     )
 
                     // ── /mna creator chest ─────────────────────────────────
@@ -111,15 +91,6 @@ public class CreatorCommands {
 
     // ── Tool ─────────────────────────────────────────────────────────────────
 
-    private static int giveScannerWand(CommandContext<CommandSourceStack> ctx) {
-        ServerPlayer player = getPlayer(ctx);
-        if (player == null) return 0;
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(MillItems.STRUCTURE_SCANNER));
-        player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.success_prefix")
-            .append(Component.translatable("chat.millenaire-new-age.creator.scanner_tool")));
-        return 1;
-    }
-
     private static int givePlacerWand(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = getPlayer(ctx);
         if (player == null) return 0;
@@ -127,43 +98,6 @@ public class CreatorCommands {
         player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.success_prefix")
             .append(Component.translatable("chat.millenaire-new-age.creator.placer_tool")));
         return 1;
-    }
-
-    // ── Structure save ────────────────────────────────────────────────────────
-
-    private static int saveStructure(CommandContext<CommandSourceStack> ctx, String structureId) {
-        ServerPlayer player = getPlayer(ctx);
-        if (player == null) return 0;
-
-        CreatorSession session = CreatorSession.get(player);
-        if (!session.hasSelection()) {
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.error_prefix")
-                .append(Component.translatable("chat.millenaire-new-age.creator.no_selection")));
-            return 0;
-        }
-
-        try {
-            java.nio.file.Path saved = StructureSaveManager.saveStructure(
-                player.level().getServer(), player.level(), session, structureId);
-
-            Vec3i size = session.getSize();
-            String langKey = "structure.millenaire-new-age." + structureId.replace('/', '.');
-
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.success_prefix")
-                .append(Component.translatable("chat.millenaire-new-age.creator.save_success")));
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.save_file", Component.literal(saved.toString())));
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.save_size",
-                size.getX(), size.getY(), size.getZ()));
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.save_lang", langKey));
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.save_instruction_lang"));
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.save_instruction_data", structureId));
-            return 1;
-
-        } catch (Exception e) {
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.error_prefix")
-                .append(Component.translatable("chat.millenaire-new-age.creator.save_error", e.getMessage())));
-            return 0;
-        }
     }
 
     // ── Structure list ────────────────────────────────────────────────────────
@@ -268,40 +202,6 @@ public class CreatorCommands {
         player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.info_lang", langKey));
         player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.info_name_en", enName));
         player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.info_name_fr", frName));
-        return 1;
-    }
-
-    // ── Selection ─────────────────────────────────────────────────────────────
-
-    private static int clearSelection(CommandContext<CommandSourceStack> ctx) {
-        ServerPlayer player = getPlayer(ctx);
-        if (player == null) return 0;
-        CreatorSession.get(player).clearSelection();
-        player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.success_prefix")
-            .append(Component.translatable("chat.millenaire-new-age.creator.selection_reset")));
-        return 1;
-    }
-
-    private static int selectionInfo(CommandContext<CommandSourceStack> ctx) {
-        ServerPlayer player = getPlayer(ctx);
-        if (player == null) return 0;
-
-        CreatorSession session = CreatorSession.get(player);
-        if (!session.hasSelection()) {
-            player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.prefix")
-                .append(Component.translatable("chat.millenaire-new-age.creator.no_active_selection")));
-            return 0;
-        }
-
-        BlockPos min  = session.getMinPos();
-        BlockPos max  = session.getMaxPos();
-        Vec3i    size = session.getSize();
-
-        player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.selection_info_title"));
-        player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.selection_pos1", min.toShortString()));
-        player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.selection_pos2", max.toShortString()));
-        player.sendSystemMessage(Component.translatable("chat.millenaire-new-age.creator.selection_size",
-            size.getX(), size.getY(), size.getZ(), (size.getX() * size.getY() * size.getZ())));
         return 1;
     }
 

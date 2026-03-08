@@ -1,7 +1,6 @@
 package com.mat37dev.creator;
 
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mat37dev.MillenaireNewAge;
@@ -12,8 +11,6 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
@@ -22,7 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Sauvegarde et chargement des structures créateur.
@@ -36,56 +32,6 @@ public class StructureSaveManager {
 
     private static final com.google.gson.Gson GSON =
             new GsonBuilder().setPrettyPrinting().create();
-
-    // ── Sauvegarde ───────────────────────────────────────────────────────────
-
-    /**
-     * Sauvegarde la sélection active comme structure NBT.
-     *
-     * @param server      serveur courant
-     * @param level       dimension courante
-     * @param session     session du joueur (contient pos1/pos2)
-     * @param structureId ex: "normans/house_t1"
-     * @return chemin absolu du fichier .nbt créé
-     * @throws IOException en cas d'erreur d'écriture
-     */
-    public static Path saveStructure(MinecraftServer server, ServerLevel level,
-                                     CreatorSession session, String structureId) throws IOException {
-        if (!session.hasSelection()) {
-            throw new IllegalStateException("Aucune sélection active.");
-        }
-
-        BlockPos min  = session.getMinPos();
-        Vec3i    size = session.getSize();
-
-        // 1. Capturer les blocs dans un StructureTemplate
-        StructureTemplate template = new StructureTemplate();
-        template.fillFromWorld(level, min, size, false, List.of());
-
-        // 2. Sérialiser en NBT
-        CompoundTag nbt = template.save(new CompoundTag());
-
-        // 3. Préparer les chemins
-        String sanitized = structureId.replace(':', '/');
-        Path outputDir   = creatorOutputDir().resolve("creator_structures");
-        Path nbtPath     = outputDir.resolve(sanitized + ".nbt");
-        Path blocksPath  = outputDir.resolve(sanitized + "_blocks.json");
-
-        Files.createDirectories(nbtPath.getParent());
-
-        // 4. Écrire le .nbt
-        NbtIo.writeCompressed(nbt, nbtPath);
-
-        // 5. Écrire la liste de positions non-air pour le preview client
-        List<BlockPos> blockPositions = captureBlockPositions(level, min, size);
-        saveBlockPositions(blocksPath, blockPositions, size);
-
-        // 6. Mettre à jour lang_additions.json
-        updateLangAdditions(server, structureId);
-
-        MillenaireNewAge.LOGGER.info("Structure '{}' sauvegardée → {}", structureId, nbtPath);
-        return nbtPath;
-    }
 
     // ── Chargement ───────────────────────────────────────────────────────────
 
@@ -136,38 +82,12 @@ public class StructureSaveManager {
     }
 
     /**
-     * Charge la liste des positions relatives pour le preview client.
+     * Charge la liste des positions relatives pour le preview client depuis le NBT.
      */
     public static List<BlockPos> loadBlockPositions(MinecraftServer server, String structureId) {
-        String sanitized = structureId.replace(':', '/');
-        Path blocksPath = creatorOutputDir().resolve("creator_structures/" + sanitized + "_blocks.json");
-
-        // 1. Si le JSON existe, on l'utilise (plus rapide)
-        if (Files.exists(blocksPath)) {
-            try {
-                String json = Files.readString(blocksPath);
-                JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-                JsonArray arr = root.getAsJsonArray("blocks");
-                List<BlockPos> result = new ArrayList<>(arr.size());
-                for (var elem : arr) {
-                    JsonObject o = elem.getAsJsonObject();
-                    result.add(new BlockPos(
-                        o.get("x").getAsInt(),
-                        o.get("y").getAsInt(),
-                        o.get("z").getAsInt()
-                    ));
-                }
-                return result;
-            } catch (Exception e) {
-                MillenaireNewAge.LOGGER.error("Erreur lecture JSON preview pour '{}' : {}", structureId, e.getMessage());
-            }
-        }
-
-        // 2. Sinon, on extrait les positions depuis le NBT directement
         StructureTemplate template = loadTemplate(server, structureId);
         if (template != null) {
             List<BlockPos> result = new ArrayList<>();
-            // On utilise l'accesseur pour accéder à la première palette
             var palettes = ((com.mat37dev.mixin.StructureTemplateAccessor) template).getPalettes();
             if (!palettes.isEmpty()) {
                 for (StructureTemplate.StructureBlockInfo info : palettes.getFirst().blocks()) {
@@ -178,7 +98,6 @@ public class StructureSaveManager {
             }
             return result;
         }
-
         return List.of();
     }
 
@@ -217,39 +136,6 @@ public class StructureSaveManager {
     }
 
     // ── Helpers internes ─────────────────────────────────────────────────────
-
-    private static List<BlockPos> captureBlockPositions(ServerLevel level, BlockPos min, Vec3i size) {
-        List<BlockPos> result = new ArrayList<>();
-        for (int x = 0; x < size.getX(); x++) {
-            for (int y = 0; y < size.getY(); y++) {
-                for (int z = 0; z < size.getZ(); z++) {
-                    BlockPos world = min.offset(x, y, z);
-                    if (!level.getBlockState(world).isAir()) {
-                        result.add(new BlockPos(x, y, z));
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    private static void saveBlockPositions(Path path, List<BlockPos> positions, Vec3i size) throws IOException {
-        JsonObject root = new JsonObject();
-        root.addProperty("size_x", size.getX());
-        root.addProperty("size_y", size.getY());
-        root.addProperty("size_z", size.getZ());
-
-        JsonArray arr = new JsonArray();
-        for (BlockPos pos : positions) {
-            JsonObject o = new JsonObject();
-            o.addProperty("x", pos.getX());
-            o.addProperty("y", pos.getY());
-            o.addProperty("z", pos.getZ());
-            arr.add(o);
-        }
-        root.add("blocks", arr);
-        Files.writeString(path, GSON.toJson(root));
-    }
 
     private static void updateLangAdditions(MinecraftServer server, String structureId)
             throws IOException {
@@ -320,48 +206,101 @@ public class StructureSaveManager {
             .resolve("mods/MillenaireNewAge");
     }
 
-    // ── Détection de structure à enfouir ─────────────────────────────────────
-
-    /** Blocs de sol naturel : si la couche Y=0 du template est majoritairement composée
-     *  de ces blocs, la structure doit être posée 1 bloc plus bas pour s'intégrer au terrain. */
-    private static final Set<Block> NATURAL_SOIL_BLOCKS = Set.of(
-        Blocks.DIRT, Blocks.GRASS_BLOCK, Blocks.COARSE_DIRT, Blocks.PODZOL,
-        Blocks.MYCELIUM, Blocks.DIRT_PATH, Blocks.MOSS_BLOCK,
-        Blocks.SAND, Blocks.RED_SAND, Blocks.GRAVEL, Blocks.MUD
-    );
+    // ── Sauvegarde depuis Import Table ────────────────────────────────────────
 
     /**
-     * Retourne {@code true} si la couche inférieure (Y=0) de la structure est
-     * majoritairement constituée de blocs de sol naturel.
+     * Sauvegarde la zone définie par l'Import Table comme structure NBT.
      *
-     * <p>Dans ce cas, la structure doit être placée 1 bloc plus bas que {@code targetY}
-     * afin que son sol se fonde dans le terrain plutôt que de flotter à la surface.</p>
+     * @param server      serveur courant
+     * @param level       dimension courante
+     * @param tablePos    position de la Import Table
+     * @param config      configuration de la zone
+     * @param structureId ex: "normans/house_t1"
+     * @throws IOException en cas d'erreur d'écriture
      */
-    public static boolean shouldEmbedInGround(MinecraftServer server, String structureId) {
-        StructureTemplate template = loadTemplate(server, structureId);
-        if (template == null) return false;
-        return shouldEmbedFromTemplate(template);
+    public static void saveStructureFromTable(MinecraftServer server, ServerLevel level,
+                                              BlockPos tablePos, ImportTableConfig config,
+                                              String structureId) throws IOException {
+        // La table est en dehors de la zone (+1 en X et Z)
+        BlockPos min  = new BlockPos(tablePos.getX() + 1, tablePos.getY() - config.depth(), tablePos.getZ() + 1);
+        Vec3i    size = new Vec3i(config.width(), config.height() + config.depth(), config.length());
+
+        StructureTemplate template = new StructureTemplate();
+        template.fillFromWorld(level, min, size, false, List.of());
+
+        CompoundTag nbt = template.save(new CompoundTag());
+
+        // Embed métadonnées Millenaire dans le NBT
+        CompoundTag meta = new CompoundTag();
+        meta.putInt("width",        config.width());
+        meta.putInt("length",       config.length());
+        meta.putInt("height",       config.height());
+        meta.putInt("depth",        config.depth());
+        meta.putInt("floor_height", config.floorHeight());
+        nbt.put("millenaire_meta", meta);
+
+        String sanitized = structureId.replace(':', '/');
+        Path outputDir   = creatorOutputDir().resolve("creator_structures");
+        Path nbtPath     = outputDir.resolve(sanitized + ".nbt");
+
+        Files.createDirectories(nbtPath.getParent());
+        NbtIo.writeCompressed(nbt, nbtPath);
+
+        updateLangAdditions(server, structureId);
+
+        MillenaireNewAge.LOGGER.info("Structure '{}' sauvegardée depuis Import Table → {}", structureId, nbtPath);
     }
 
     /**
-     * Variante qui accepte un template déjà chargé (évite un double chargement
-     * quand l'appelant a déjà le template en main, ex: baguette de placement).
+     * Calcule l'origine de placement d'une structure depuis la position de l'Import Table.
+     * L'origine est le coin bas-gauche de la zone de capture.
      */
-    public static boolean shouldEmbedFromTemplate(StructureTemplate template) {
-        var palettes = ((com.mat37dev.mixin.StructureTemplateAccessor) template).getPalettes();
-        if (palettes.isEmpty()) return false;
+    public static BlockPos computePlacementOrigin(BlockPos tablePos, ImportTableConfig config) {
+        // La table est en dehors de la zone : la zone commence à tx+1, tz+1
+        return new BlockPos(tablePos.getX() + 1, tablePos.getY() - config.depth(), tablePos.getZ() + 1);
+    }
 
-        List<StructureTemplate.StructureBlockInfo> bottomRow = palettes.getFirst().blocks().stream()
-            .filter(info -> info.pos().getY() == 0 && !info.state().isAir())
-            .toList();
+    // ── Métadonnées (dans le NBT) ─────────────────────────────────────────────
 
-        if (bottomRow.isEmpty()) return false;
+    /**
+     * Charge l'ImportTableConfig depuis la clé {@code millenaire_meta} du NBT.
+     *
+     * @return la config, ou {@code null} si absent ou incomplet
+     */
+    @org.jetbrains.annotations.Nullable
+    public static ImportTableConfig loadImportTableConfig(String structureId) {
+        String sanitized = structureId.replace(':', '/');
+        Path nbtPath = creatorOutputDir().resolve("creator_structures/" + sanitized + ".nbt");
+        if (!Files.exists(nbtPath)) return null;
+        try {
+            CompoundTag nbt = NbtIo.readCompressed(nbtPath, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            CompoundTag meta = nbt.getCompound("millenaire_meta").orElse(null);
+            if (meta == null || !meta.contains("width")) return null;
+            return new ImportTableConfig(
+                meta.getInt("width").orElse(0),
+                meta.getInt("length").orElse(0),
+                meta.getInt("height").orElse(0),
+                meta.getInt("depth").orElse(0),
+                meta.getInt("floor_height").orElse(-1)
+            );
+        } catch (Exception e) {
+            MillenaireNewAge.LOGGER.error("Erreur lecture config NBT '{}' : {}", structureId, e.getMessage());
+            return null;
+        }
+    }
 
-        long soilCount = bottomRow.stream()
-            .filter(info -> NATURAL_SOIL_BLOCKS.contains(info.state().getBlock()))
-            .count();
-
-        return (double) soilCount / bottomRow.size() > 0.5;
+    /**
+     * Retourne l'offset de la couche sol dans le NBT : {@code depth + floorHeight}.
+     *
+     * <p>Représente le Y dans l'espace NBT auquel se trouve la couche sol visible.
+     * Lors du placement : {@code origin.Y = surface - floorOffset} pour que le sol
+     * apparaisse à la surface du terrain.</p>
+     *
+     * @return floorOffset ≥ 0, ou 0 si absent (structure sans métadonnées : sol à NBT Y=0)
+     */
+    public static int loadMetadata(String structureId) {
+        ImportTableConfig cfg = loadImportTableConfig(structureId);
+        return cfg != null ? Math.max(0, cfg.depth() + cfg.floorHeight()) : 0;
     }
 
     // Placement des structures ─────────────────────────────────────────────

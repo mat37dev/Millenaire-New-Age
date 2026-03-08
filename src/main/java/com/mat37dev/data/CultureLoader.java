@@ -26,11 +26,11 @@ import java.util.Map;
  * <p>Ordre de priorité :</p>
  * <ol>
  *   <li>Fichiers JSON (datapacks) — peuvent être overridés par d'autres datapacks</li>
- *   <li>Registrations programmatiques (MilenaireApi) — s'appliquent en dernier,
+ *   <li>Registrations programmatiques (MillenaireApi) — s'appliquent en dernier,
  *       sauf si un JSON existe déjà pour cet ID</li>
  * </ol>
  */
-public class CultureLoader implements ResourceManagerReloadListener {
+ public class CultureLoader implements ResourceManagerReloadListener {
 
     private static final ResourceLocation LOADER_ID =
             ResourceLocation.fromNamespaceAndPath(MillenaireNewAge.MOD_ID, "culture_loader");
@@ -38,13 +38,12 @@ public class CultureLoader implements ResourceManagerReloadListener {
     private static final String DATA_PATH = "culture";
 
     /**
-     * Cultures enregistrées programmatiquement via {@link com.mat37dev.api.MilenaireApi}.
+     * Cultures enregistrées programmatiquement via {@link com.mat37dev.api.MillenaireApi}.
      * Survivent aux reloads de datapacks.
      */
     private static final Map<String, Culture> PROGRAMMATIC = new LinkedHashMap<>();
 
-    // ── API interne (appelée par MilenaireApi) ───────────────────────────────
-
+    // ── API interne (appelée par MillenaireApi) ───────────────────────────────
     public static void addProgrammatic(Culture culture) {
         PROGRAMMATIC.put(culture.id(), culture);
         MillenaireNewAge.LOGGER.debug("Culture programmatique enregistrée : {}", culture.id());

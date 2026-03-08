@@ -40,8 +40,7 @@ public class MillBedBlock extends BedBlock {
     }
 
     @Override
-    @Nullable
-    public BedBlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    public @Nullable BedBlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         // Pas de block entity : on utilise notre modèle JSON statique.
         // Le BedRenderer vanilla (lié à BlockEntityType.BED) ne sera pas appelé.
         // Les mécaniques de sommeil sont dans BedBlock.useWithoutItem(), pas dans la block entity.

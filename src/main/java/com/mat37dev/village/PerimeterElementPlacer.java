@@ -226,10 +226,10 @@ public class PerimeterElementPlacer {
         // TerrainAdapter gère : végétation, eau, nivelage (pas de padding pour les éléments de périmètre)
         int targetY = TerrainAdapter.adapt(level, footprintNW, footX, footZ);
 
-        // On ajuste le Y selon si la structure doit être "fondue" dans le sol
-        if (StructureSaveManager.shouldEmbedInGround(server, bt.structureId())) {
-            targetY--;
-        }
+        // targetY = premier bloc d'air (TerrainAdapter). -1 pour aligner au bloc de surface,
+        // -floorOffset pour les fondations sous le sol.
+        int floorOffset = StructureSaveManager.loadMetadata(bt.structureId());
+        targetY -= 1 + floorOffset;
 
         BlockPos origin = new BlockPos(worldX, targetY, worldZ);
 

@@ -118,7 +118,6 @@ public class MillItemGroups {
                         entries.accept(MillItems.SOIL_POTATO);
 
                         // ── Baguettes créateur ────────────────────────────────
-                        entries.accept(MillItems.STRUCTURE_SCANNER);
                         entries.accept(MillItems.STRUCTURE_PLACER);
                     })
                     .build()

@@ -2,7 +2,6 @@ package com.mat37dev;
 
 import com.mat37dev.command.MillCommands;
 import com.mat37dev.config.VillageConfig;
-import com.mat37dev.creator.StructureScannerItem;
 import com.mat37dev.data.CultureLoader;
 import com.mat37dev.entity.MillVillagerEntity;
 import com.mat37dev.entity.ai.MillMemories;
@@ -20,9 +19,6 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,17 +61,6 @@ public class MillenaireNewAge implements ModInitializer {
         // Commandes debug
         CommandRegistrationCallback.EVENT.register(
                 (dispatcher, registryAccess, environment) -> MillCommands.register(dispatcher));
-
-        // Clic gauche avec la Baguette d'Arpentage → Pos1
-        AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-            if (!world.isClientSide()
-                    && player instanceof ServerPlayer serverPlayer
-                    && player.getItemInHand(hand).getItem() instanceof StructureScannerItem) {
-                StructureScannerItem.onLeftClick(serverPlayer, pos);
-                return InteractionResult.SUCCESS;
-            }
-            return InteractionResult.PASS;
-        });
 
         LOGGER.info("Millenaire: New Age initialized.");
     }
